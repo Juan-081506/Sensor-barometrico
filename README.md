@@ -17,4 +17,4 @@ Conexiones del sensor (I2C)
 | GND            | GND                |       
 | SDA            | A4                 |
 | SCL            | A5                 |
-|----------------|--------------------|
+
