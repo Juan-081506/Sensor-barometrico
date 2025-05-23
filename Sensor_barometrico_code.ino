@@ -1,63 +1,71 @@
-/*
-Proyecto: Medición de Presión Barométrica y Altitud con Arduino y BMP280
+#define N 30 // número de lecturas en 5 minutos (10 segundos cada lectura)
+float presiones[N];
+int indice = 0;
+bool lleno = false;
 
-Asegurate de instalar las siguientes librerías antes de subir el código:
-
-- Adafruit BMP280
-- Adafruit Unified Sensor
-
-Puedess instalarlas desde el Gestor de Librerías del IDE de Arduino:
-1. Abrí el IDE de Arduino.
-2. Ve a "Programa" > "Incluir Librería" > "Gestionar bibliotecas..."
-3. Busca "Adafruit BMP280" e instalala.
-4. Busca "Adafruit Unified Sensor" e instalala también.
-
-Este código te permitirá leer la presión atmosférica (en hPa)
-y calcular la altitud relativa con respecto al nivel del mar,
-usando una presión de referencia estándar (1013.25 hPa).
-
-
-¡Sientete libre de modificar el codigo!
-*/
+unsigned long ultimoTiempo = 0;
+const unsigned long intervalo = 10000; // 10 segundos en ms
 
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_BMP280.h> // Librería para el sensor BMP280
+#include <Adafruit_BMP280.h>
 
-// Crear el objeto del sensor
-Adafruit_BMP280 bmp; // Usamos comunicación I2C por defecto
+Adafruit_BMP280 bmp;
 
 void setup() {
-Serial.begin(9600); // Iniciar la comunicación serial a 9600 baudios
-
-// Inicializar el sensor BMP280
-if (!bmp.begin(0x76)) { // La dirección puede ser 0x76 o 0x77 según el módulo
-Serial.println("¡Error: no se detectó el sensor BMP280!");
-while (1); // Detiene el programa si no se encuentra el sensor
-}
-
-Serial.println("Sensor BMP280 detectado y funcionando.");
+  Serial.begin(9600);
+  if (!bmp.begin(0x76)) {
+    Serial.println("Error: no se detecto el sensor BMP280!");
+    while (1);
+  }
+  Serial.println("Sensor BMP280 detectado.");
 }
 
 void loop() {
-// Leer la presión del sensor (en pascales) y convertir a hectopascales
-float presion_hPa = bmp.readPressure() / 100.0F;
+  unsigned long ahora = millis();
+  if (ahora - ultimoTiempo >= intervalo) {
+    ultimoTiempo = ahora;
 
-// Calcular la altitud estimada en metros
-// El valor 1013.25 es la presión atmosférica estándar al nivel del mar en hPa
-float altitud_metros = bmp.readAltitude(1013.25);
+    float presion_hPa = bmp.readPressure() / 100.0F;
 
-// Imprimir la presión en el monitor serial
-Serial.print("Presión: ");
-Serial.print(presion_hPa);
-Serial.println(" hPa");
+    presiones[indice] = presion_hPa;
+    indice++;
+    if (indice >= N) {
+      indice = 0;
+      lleno = true;
+    }
 
-// Imprimir la altitud estimada
-Serial.print("Altitud estimada: ");
-Serial.print(altitud_metros);
-Serial.println(" m");
+    Serial.print("Presion actual: ");
+    Serial.print(presion_hPa);
+    Serial.println(" hPa");
 
-Serial.println("-----------------------------");
+    if (lleno) {
+      int indiceHace5Min = indice; // posición 5 minutos atrás en arreglo circular
+      float presionHace5Min = presiones[indiceHace5Min];
 
-delay(2000); // Esperar 2 segundos antes de la siguiente lectura
+      float cambio = presion_hPa - presionHace5Min;
+
+      Serial.print("Cambio de presion en los ultimos 5 minutos: ");
+      Serial.print(cambio);
+      Serial.println(" hPa");
+
+      float probLluvia = 0;
+      if (cambio < 0) {
+        probLluvia = min(-cambio * 30.0, 100.0);
+      }
+
+      Serial.print("Probabilidad estimada de lluvia: ");
+      Serial.print(probLluvia);
+      Serial.println(" %");
+    } else {
+      Serial.println("Recopilando datos para 5 minutos...");
+    }
+
+    Serial.println("------------------------");
+  }
 }
+
+
+
+
+
