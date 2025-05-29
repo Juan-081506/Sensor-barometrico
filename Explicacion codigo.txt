@@ -1,0 +1,30 @@
+Explicación del Código para Medición de Presión Atmosférica
+
+Este código está diseñado para usar un sensor BMP280 y medir la presión atmosférica cada cierto tiempo. Además, permite estimar la probabilidad de lluvia según el cambio de presión en los últimos 5 minutos. A continuación, se explica cada parte:
+
+1. **Configuración Inicial:**
+   - `#define N 30`: Define el número de lecturas que se tomarán en 5 minutos. El valor de N depende de cada cuánto se hagan las lecturas. Por ejemplo, si se toman lecturas cada 10 segundos, en 5 minutos hay 30 lecturas.
+   - `float presiones[N]`: Arreglo que guarda las lecturas de presión.
+   - `int indice = 0` y `bool lleno = false`: Variables para controlar en qué posición del arreglo vamos y si ya se han tomado suficientes datos para hacer comparaciones.
+   - `const unsigned long intervalo = 10000`: Intervalo entre lecturas, en milisegundos. 10.000 ms = 10 segundos.
+
+2. **Librerías e Inicialización del Sensor:**
+   - Se incluyen las librerías necesarias para trabajar con el sensor BMP280.
+   - En `setup()`, se inicia la comunicación serial y se verifica que el sensor esté funcionando correctamente.
+
+3. **Lecturas de Presión:**
+   - Dentro del `loop()`, se espera a que pasen 10 segundos desde la última lectura usando `millis()`.
+   - Se toma la presión actual y se guarda en el arreglo.
+   - Se incrementa el índice y, si llegamos al final del arreglo, volvemos al inicio (arreglo circular) y marcamos como "lleno".
+
+4. **Cálculo del Cambio de Presión y Probabilidad de Lluvia:**
+   - Si ya se tienen suficientes datos (es decir, pasaron al menos 5 minutos), se compara la presión actual con la de hace 5 minutos (mismo índice pero en el ciclo anterior).
+   - Se calcula la diferencia y, si es negativa (la presión bajó), se estima una probabilidad de lluvia usando una fórmula simple: `probabilidad = min(-cambio * 30.0, 100.0)`.
+
+5. **Personalización:**
+   - Si se desea cambiar la frecuencia de las lecturas, se puede modificar el valor de `intervalo`.
+   - Si se cambia el intervalo, también debe cambiarse `N` para que siga representando 5 minutos de datos. Por ejemplo:
+     - Si intervalo = 5000 (5 segundos), entonces N = 60.
+     - Si intervalo = 15000 (15 segundos), entonces N = 20.
+
+Este documento sirve para entender y explicar el funcionamiento del código de forma clara y sencilla.
