@@ -1,0 +1,48 @@
+
+Explicación del Código para Medición de Presión y Altura Relativa con BMP280
+
+Este código está hecho para usar un sensor BMP280, midiendo tanto la presión atmosférica como la altura sobre el nivel del mar. Toma una lectura cada cierto tiempo (en este caso, 2 segundos) y estima la diferencia de presión y altura en un periodo de 1 minuto.
+
+1. Configuración Inicial:
+
+- #define N 30: Define el número de lecturas que se tomarán en 1 minuto. Este valor depende del intervalo entre lecturas.  
+  Fórmula:  
+  N = Tiempo total en milisegundos / Intervalo entre lecturas (ms)  
+  En este caso:  
+  N = 60000 ms / 2000 ms = 30
+
+- float presiones[N]: Arreglo donde se guardan las últimas N lecturas de presión.
+- int indice = 0 y bool lleno = false: Controlan el índice del arreglo y si ya tenemos suficientes datos para hacer comparaciones.
+- const unsigned long intervalo = 2000: Intervalo de lectura en milisegundos. Aquí está configurado para 2 segundos (2000 ms).
+
+2. Librerías e Inicialización del Sensor:
+
+- Se incluyen las librerías Wire.h, Adafruit_Sensor.h, y Adafruit_BMP280.h para poder comunicarse con el sensor.
+- En el setup(), se inicia la comunicación Serial y se verifica que el sensor BMP280 esté conectado y funcionando.
+- También se define la presión estándar al nivel del mar (presion_nivel_mar) para poder calcular la altura.
+
+3. Lectura de Presión y Cálculo de Altura:
+
+- En el loop(), se espera que pase el intervalo establecido usando millis().
+- Se lee la presión actual (bmp.readPressure()), que se divide por 100.0 para convertirla de Pa a hPa.
+- Se guarda esa lectura en el arreglo presiones y se actualiza el índice. Si se llena el arreglo, se reinicia desde el inicio (modo circular) y se marca como "lleno".
+- Se calcula la altura actual con la función:
+  float altura_metros = bmp.readAltitude(presion_nivel_mar);
+  Esta función devuelve la altura estimada respecto al nivel del mar, usando la presión actual y la estándar como referencia.
+
+4. Cambio de Presión y Altura en el Último Minuto:
+
+- Si ya han pasado 30 lecturas (es decir, 1 minuto), se calcula la diferencia de presión entre la lectura actual y la que se hizo hace exactamente 1 minuto (con el mismo índice en el ciclo anterior).
+- Se calcula el cambio de altura basado en la diferencia de presión, aunque este valor puede tener pequeñas variaciones por temperatura y humedad.
+
+5. Personalización del Tiempo de Medición:
+
+Si quieres cambiar el intervalo de lectura o el tiempo total, solo debes ajustar:
+
+- intervalo: el tiempo entre cada lectura (en milisegundos).
+- N: el número de lecturas, usando la fórmula:
+  N = Tiempo total deseado en ms / Intervalo en ms
+
+Por ejemplo:
+- Si quieres lecturas cada 5 segundos por 2 minutos:
+  N = 120000 / 5000 = 24
